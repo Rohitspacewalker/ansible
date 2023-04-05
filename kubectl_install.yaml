@@ -1,0 +1,27 @@
+---
+- hosts: "masters"
+  remote_user: ubuntu
+  become: yes
+  become_method: sudo
+  gather_facts: yes
+  
+  tasks:
+
+    - name: Download the latest kubectl release
+      uri:
+        url: https://s3.us-west-2.amazonaws.com/amazon-eks/1.25.7/2023-03-17/bin/linux/amd64/kubectl
+        dest: /home/{{ ansible_user }}
+      register: kubectl
+    - name: Move kubectl and change permissions
+      file:
+        src: "{{ kubectl.path }}"
+        dest: /usr/local/bin/kubectl
+        state: hard
+        owner: root
+        group: root
+        mode: "+x"
+
+    - name: Check if kubectl is installed
+      shell: kubectl version --client
+      register: client
+      failed_when: client.rc > 1
